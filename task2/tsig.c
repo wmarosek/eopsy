@@ -14,7 +14,7 @@
 //-------------------------------------------------------------------------------------
 
 #define NUM_CHILD 15
-#define WITH_SIGNALS
+// #define WITH_SIGNALS
 
 //-------------------------------------------------------------------------------------
 //   Definition of funcion:
@@ -83,12 +83,19 @@ int main(){
         else if(child_pid > 0){                                                     // 'positive no' : return the parent-process, the pid is equal to child-process
             childArray[child_created] = child_pid;
 
+            #ifdef WITH_SIGNALS
             if(!interupted){                                                        //   check the mark which may be set by the keyboard  interrupt handler. 
                 printf("\tParent[%d]: with new Child[%d]\n", getpid(), child_pid);
             } else {
                 printf("\tParent[%d]: Keyboard interrupt signal [ctrl+c] during creation new Child[%d]\n", getpid(), child_pid);
                 childTermination(child_created, childArray);
             }
+            #endif
+
+            #ifndef WITH_SIGNALS
+                printf("\tParent[%d]: with new Child[%d]\n", getpid(), child_pid);
+            #endif
+
         }
 
         sleep(1);
