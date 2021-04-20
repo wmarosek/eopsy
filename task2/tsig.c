@@ -186,7 +186,7 @@ void intHandler() {                                                             
 
 
 void termHandler() {                                                                // Own handler of the SIGTERM signal
-    printf("\tParent[%d]: Termineted by SIGTERM\n", getpid());
+    printf("\tChild[%d]: Termineted by SIGTERM\n", getpid());
     interupted = true;
 }
 
