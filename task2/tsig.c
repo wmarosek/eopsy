@@ -13,8 +13,8 @@
 //   Common variable:
 //-------------------------------------------------------------------------------------
 
-#define NUM_CHILD 15
-// #define WITH_SIGNALS
+#define NUM_CHILD 10
+#define WITH_SIGNALS
 
 //-------------------------------------------------------------------------------------
 //   Definition of funcion:
@@ -67,13 +67,13 @@ int main(){
     pid_t childArray[NUM_CHILD];
     pid_t child_pid;
     
-    int child_created;
-    for(child_created = 0; child_created < NUM_CHILD; child_created++){
+    int childCreated;
+    for(childCreated = 0; childCreated < NUM_CHILD; childCreated++){
         child_pid = fork();                                                         //  Child creation
         
         if(child_pid == -1){                                                        // '-1' : return the parent-process, failed during creating child-process
             printf("\tFailed during creating child-process!\n");
-            childTermination(child_created, childArray);
+            childTermination(childCreated, childArray);
             return 1;
         }
         else if(child_pid == 0){                                                    // '0' : return the child-process 
@@ -81,14 +81,14 @@ int main(){
             return 0;
         }
         else if(child_pid > 0){                                                     // 'positive no' : return the parent-process, the pid is equal to child-process
-            childArray[child_created] = child_pid;
+            childArray[childCreated] = child_pid;
 
             #ifdef WITH_SIGNALS
             if(!interupted){                                                        //   check the mark which may be set by the keyboard  interrupt handler. 
                 printf("\tParent[%d]: with new Child[%d]\n", getpid(), child_pid);
             } else {
                 printf("\tParent[%d]: Keyboard interrupt signal [ctrl+c] during creation new Child[%d]\n", getpid(), child_pid);
-                childTermination(child_created, childArray);
+                childTermination(childCreated, childArray);
             }
             #endif
 
@@ -103,15 +103,15 @@ int main(){
 
     int exitStatus[NUM_CHILD][2];
     int status;
-    for(child_created = 0; child_created < NUM_CHILD; child_created++){
+    for(childCreated = 0; childCreated < NUM_CHILD; childCreated++){
         child_pid = wait(&status);
         
         if(child_pid == -1)                                                        // Expecting the child process id, wait until all child procces ends
             printf("\tNo more child procceses");
 
-        exitStatus[child_created][0] = child_pid;
-        exitStatus[child_created][1] = WEXITSTATUS(status);
-        printf("\tChild[%d]: Exit status: %d\n", exitStatus[child_created][0], exitStatus[child_created][1]);
+        exitStatus[childCreated][0] = child_pid;
+        exitStatus[childCreated][1] = WEXITSTATUS(status);
+        printf("\tChild[%d]: Exit status: %d\n", exitStatus[childCreated][0], exitStatus[childCreated][1]);
 
     }
 
@@ -131,8 +131,8 @@ int main(){
 
     int one_cntr = 0;
     int zero_cntr = 0;
-    for(child_created = 0; child_created < NUM_CHILD; child_created++){
-        if(exitStatus[child_created][1] ==  1)
+    for(childCreated = 0; childCreated < NUM_CHILD; childCreated++){
+        if(exitStatus[childCreated][1] ==  1)
             one_cntr++;
         else
             zero_cntr++;
