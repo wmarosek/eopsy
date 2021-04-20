@@ -13,22 +13,24 @@
 //   Common variable:
 //-------------------------------------------------------------------------------------
 
-#define NUM_CHILD 10
+#define NUM_CHILD 15
 #define WITH_SIGNALS
-#define INFINITE_LOOP for(;;)
 
-void printLine();
-void printHeader();
-
+//-------------------------------------------------------------------------------------
+//   Definition of funcion:
+//-------------------------------------------------------------------------------------
 void childProcess();
 void childTermination();
 
 #ifdef WITH_SIGNALS
-bool interupted = false;
+bool interupted = false;                            //  global variable which will notify about the fact of  keyboard interrupt occurance  
 
 void intHandler();
 void termHandler();
 #endif
+
+void printLine();
+void printHeader();
 
 //-------------------------------------------------------------------------------------
 //   main():
@@ -36,21 +38,20 @@ void termHandler();
 
 int main(){
 
-    #ifdef WITH_SIGNALS
     
-    for(int i = 1; i < _NSIG; i++)
-        signal(i, SIG_IGN);
-    
-    signal(SIGCHLD, SIG_DFL);
-    signal(SIGINT, intHandler);
+    #ifdef WITH_SIGNALS                             // Force ignoring of all signals with the signal() and restore the default handler for SIGCHLD signal
+
+        for(int i = 1; i < _NSIG; i++)              // Ignore all singals
+            signal(i, SIG_IGN);
+        
+        signal(SIGCHLD, SIG_DFL);                   // Default signal handling - SIGCHLD inform that child creation process ended
+        signal(SIGINT, intHandler);                 // Set interaption signal handling | ctrl+c
 
     #endif
 
-    pid_t pid;
-    pid_t child[NUM_CHILD];
-
     printHeader();
-    printf("\n\tParent PID: %d\n", getpid());
+    printf("\tParent PID: %d\n", getpid());         // Print Parent Process ID
+    printLine();
 
 
 //-------------------------------------------------------------------------------------
@@ -59,121 +60,141 @@ int main(){
 //          - '0' : return the child-process 
 //          - '-1' : return the parent-process, failed during creating child-process
 //          - 'positive no' : return the parent-process, the pid is equal to child-process
+//
+//      inspirined on https://docs.oracle.com/cd/E19455-01/806-4750/signals-7/index.html 
 //-------------------------------------------------------------------------------------
-
-    int i =  0;
-    for(i = 0; i < NUM_CHILD; ++i){
-        switch (pid = fork())
-        {
-        case 0:
+  
+    pid_t childArray[NUM_CHILD];
+    pid_t child_pid;
+    
+    int child_created;
+    for(child_created = 0; child_created < NUM_CHILD; child_created++){
+        child_pid = fork();                                                         //  Child creation
+        
+        if(child_pid == -1){                                                        // '-1' : return the parent-process, failed during creating child-process
+            printf("\tFailed during creating child-process!\n");
+            childTermination(child_created, childArray);
+            return 1;
+        }
+        else if(child_pid == 0){                                                    // '0' : return the child-process 
             childProcess();
             return 0;
-        
-        case -1:
-            printf("\tFailed during creating child-process!\n");
-            childTermination(i, child);
-            return -1;
+        }
+        else if(child_pid > 0){                                                     // 'positive no' : return the parent-process, the pid is equal to child-process
+            childArray[child_created] = child_pid;
 
-        default:
-            child[i] = pid;
-            if(!interupted){
-                printf("\tParent[%d]: with new Child[%d]\n", getpid(), pid);
+            if(!interupted){                                                        //   check the mark which may be set by the keyboard  interrupt handler. 
+                printf("\tParent[%d]: with new Child[%d]\n", getpid(), child_pid);
             } else {
-                printf("\tFailed during creating child-process! - interupted\n");
-                childTermination(i, child);
+                printf("\tParent[%d]: Keyboard interrupt signal [ctrl+c] during creation new Child[%d]\n", getpid(), child_pid);
+                childTermination(child_created, childArray);
             }
-        
         }
 
         sleep(1);
     }
 
-    int status, num_zero = 0, num_one = 0;
-
-    INFINITE_LOOP{
-
-        pid = wait(&status);
-        if(pid == -1) // Stopping loop  // wait() returns PID of the child
-            break;                      // if -1 is returned error occurs -> we are in parent
-        if(WIFEXITED(status) == true)
-            printf("\tChild[%d]: Exit status: %d\n", pid, WEXITSTATUS(status));
+    int exitStatus[NUM_CHILD][2];
+    int status;
+    for(child_created = 0; child_created < NUM_CHILD; child_created++){
+        child_pid = wait(&status);
         
-        if(WEXITSTATUS(status) == 0)
-            num_zero++;
-        else
-            num_one++;
+        if(child_pid == -1)                                                        // Expecting the child process id, wait until all child procces ends
+            printf("\tNo more child procceses");
+
+        exitStatus[child_created][0] = child_pid;
+        exitStatus[child_created][1] = WEXITSTATUS(status);
+        printf("\tChild[%d]: Exit status: %d\n", exitStatus[child_created][0], exitStatus[child_created][1]);
+
     }
 
-    printf("\n\tNo more children for Parent[%d].\n", getpid());
-    printf("\tNumber of recieved 0 exit codes: %d\n", num_zero);
-    printf("\tNumber of recieved 1 exit codes: %d\n\n", num_one);
-
-
-
-
-
-	#ifdef WITH_SIGNALS
-        for(int i=1; i<_NSIG; i++)
-            signal(i, SIG_DFL);
+	#ifdef WITH_SIGNALS      
+                           
+    for(int i=1; i<_NSIG; i++)                                                      // Default signals
+        signal(i, SIG_DFL);
+    
     #endif
 
+//-------------------------------------------------------------------------------------
+//   Print Summary
+//-------------------------------------------------------------------------------------
+    printLine();
+    printf("\t\t\t\t Summary \n");
+    printLine();
+
+    int one_cntr = 0;
+    int zero_cntr = 0;
+    for(child_created = 0; child_created < NUM_CHILD; child_created++){
+        if(exitStatus[child_created][1] ==  1)
+            one_cntr++;
+        else
+            zero_cntr++;
+    }
+
+    printf("\tProcesses with 0 exit status: %d\n", zero_cntr);
+    printf("\tProcesses with 1 exit status: %d\n", one_cntr);
+    printLine();
+    
     return 0;
 }
 
 //-------------------------------------------------------------------------------------
-//   The child process algorithm:
+//   childProcess(): 
+//      The child process algorithm:
 //-------------------------------------------------------------------------------------
 void childProcess() {
 
     #ifdef WITH_SIGNALS
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTERM, termHandler);
+
+    signal(SIGINT, SIG_IGN);                                                        // Ignore handling of the keyboard interrupt signal  
+    signal(SIGTERM, termHandler);                                                   // Own handler of the SIGTERM signal
+
     #endif
 
-    printf("\t[C] Parent[%d]: with new Child[%d]\n", getppid(), getpid());
+    printf("\tChild[%d]: Create new child from Parent[%d]\n", getpid(), getppid());
     sleep(10);
-    printf("\t[C] Execution completed, Child[%d]\n", getpid());
-
+    printf("\tChild[%d]: Execution completed\n", getpid());
 }
+
 //-------------------------------------------------------------------------------------
-//   The already created child termiantion process:
+//   childTermination(): 
+//      The already created child termiantion process:
 //-------------------------------------------------------------------------------------
-void childTermination(int i, pid_t pids[]) {
+void childTermination(int i, pid_t childArray[]) {
     int j = 0;
     for(j = 0; j < i; j++) {
-        kill(pids[j], SIGTERM);
-        printf("\t[T] Termineted by SIGTERM, Child[%d]\n", getpid());
+        kill(childArray[j], SIGTERM);                                               // SIGTERM -  correct terminate a child processes
     }
 }
 
-
+//-------------------------------------------------------------------------------------
+//   Handlers funcitons:
+//-------------------------------------------------------------------------------------
 #ifdef WITH_SIGNALS
-void intHandler() {
-    printf("\tParent[%d]: Interrupt triggered\n", getpid());
+
+void intHandler() {                                                                 // Keyboard interrupt signal handler [ctrl +c]
+    printf("\tParent[%d]: Keyboard interrupt signal [ctrl+c] \n", getpid());
     interupted = true;
 }
 
 
-void termHandler() {
+void termHandler() {                                                                // Own handler of the SIGTERM signal
     printf("\tParent[%d]: Termineted by SIGTERM\n", getpid());
     interupted = true;
 }
+
 #endif
 
 
-
-
 //-------------------------------------------------------------------------------------
-//   Printing funcitons:
+//   Printing helpers funcitons:
 //-------------------------------------------------------------------------------------
-
 void printLine() {
-    printf("\n-------------------------------------------------------------------------------------");
+    printf("-------------------------------------------------------------------------------------\n");
 }
 
 void printHeader() {
     printLine();
-    printf("\n\t\t\t [EOPSY] Processes and Signals ");
+    printf("\t\t\t [EOPSY] Processes and Signals \n");
     printLine();
-    
 }
