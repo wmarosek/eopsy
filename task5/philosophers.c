@@ -99,9 +99,9 @@ void put_away_forks( int left_fork_id ){
         process P[i]
         while true do {
             THINK;
-            PICKUP(CHOPSTICK[i], CHOPSTICK[i+1 mod 5]);
+            PICKUP;
             EAT;
-            PUTDOWN(CHOPSTICK[i], CHOPSTICK[i+1 mod 5])
+            PUTDOWN;
         }
 ------------------------------------------------------------------------------------- */
 void *philosopher(void *num)

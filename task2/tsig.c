@@ -74,11 +74,11 @@ int main(){
         if(child_pid == -1){                                                        // '-1' : return the parent-process, failed during creating child-process
             printf("\tFailed during creating child-process!\n");
             childTermination(childCreated, childArray);
-            return 1;
+            exit(1);
         }
         else if(child_pid == 0){                                                    // '0' : return the child-process 
             childProcess();
-            return 0;
+            exit(0);
         }
         else if(child_pid > 0){                                                     // 'positive no' : return the parent-process, the pid is equal to child-process
             childArray[childCreated] = child_pid;
@@ -154,7 +154,7 @@ void childProcess() {
     #ifdef WITH_SIGNALS
 
     signal(SIGINT, SIG_IGN);                                                        // Ignore handling of the keyboard interrupt signal  
-    signal(SIGTERM, termHandler);                                                   // Own handler of the SIGTERM signal
+    signal(SIGTERM, SIG_DFL);                                                   // Own handler of the SIGTERM signal
 
     #endif
 
