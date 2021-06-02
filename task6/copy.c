@@ -61,11 +61,14 @@ int main(int argc, char *argv[]){
     int fd_from = open(argv[1 + mflag], O_RDONLY);
     int fd_to = open(argv[2 + mflag], O_RDWR | O_CREAT, 0666);
 
-    if(mflag == 1)
+    if(mflag == 1) {
+        printf("Copying by mmap and memcpy\n");
         copy_mmap(fd_from, fd_to);
-    else
+    }
+    else {
+        printf("Copying by read /write\n");
         copy_read_write(fd_from, fd_to);
-
+    }
     if(close(fd_from) == 0)
         printf("Source file was closed properly\n");
     if(close(fd_to) == 0)
@@ -92,7 +95,7 @@ void copy_read_write(int fd_from, int fd_to){
         print_error("Error while writting data to the file");
         exit(1);
     }
-    exit(0);
+
 }
 
 //-------------------------------------------------------------------------------------
