@@ -31,6 +31,7 @@
 //-------------------------------------------------------------------------------------
 
 #define PHILOSOPHER_NO 5
+#define DINING_NO 2
 #define LEFT PHILOSOPHER_ID
 #define RIGHT (PHILOSOPHER_ID + 1) % PHILOSOPHER_NO
 
@@ -77,10 +78,13 @@ int main(void) {
             printf("\tNo more child procceses");
             break;
         }
-        exit(0);
+    }
+    if (semctl(SEMID, 0, IPC_RMID) == -1) {
+        printf("Error while removing the semaphore.\n");
+        exit(1);
     }
 
-    return 0;
+    exit(0);
 }
 
 //-------------------------------------------------------------------------------------
@@ -154,7 +158,7 @@ void *philosopher()
     //Set the ID of the current philosopher
     int PHILOSOPHER_ID = philosophers_id;
 
-	while(1) {
+    for (int i = 0; i < DINING_NO; i++) {
         printf("Philosopher[%d] is THINKING\n", PHILOSOPHER_ID);
 		sleep(1);
         grab_forks(PHILOSOPHER_ID);		            //Philosopher grabs forks
