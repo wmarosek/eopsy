@@ -82,7 +82,8 @@ void *philosopher(void *num) {
             sleep(1);
             grab_forks(PHILOSOPHER_ID);                    //Philosopher grabs forks
             eat(PHILOSOPHER_ID, i+1);                            //Philosopher is eating
-            put_away_forks(PHILOSOPHER_ID);                //Philosopher puts forks down
+            sleep(1);
+	    put_away_forks(PHILOSOPHER_ID);                //Philosopher puts forks down
         }
 
         return NULL;
@@ -135,7 +136,7 @@ void grab_forks(int left_fork_id){
     pthread_mutex_lock(&m); //   Lock mutex, Begin Critical Section
     state[PHILOSOPHER_ID] = HUNGRY;
 
-    printf("Philosopher[%d] TRY TO %d GRAB FORK\n",PHILOSOPHER_ID, PHILOSOPHER_ID);
+    printf("Philosopher[%d] TRY TO [%d-%d] GRAB FORKS.\n", RIGHT, LEFT, RIGHT);
     test(PHILOSOPHER_ID);
 
     pthread_mutex_unlock(&m);   // Unlock mutex, end of ciritical section
